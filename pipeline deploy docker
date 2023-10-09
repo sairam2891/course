@@ -1,0 +1,48 @@
+pipeline {
+    agent any 
+    
+    tools{
+        jdk 'jdk'
+        maven 'maven3'
+    }     
+     stages{
+        
+        stage("Git Checkout"){
+            steps{
+                git 'https://github.com/Aj7Ay/amazon-eks-jenkins-terraform-aj7.git'
+            }
+        }
+        
+        stage("Compile"){
+            steps{
+                sh "mvn clean compile"
+            }
+        }
+        stage('Build package'){
+            steps{
+                sh "mvn clean package"
+            }
+        }
+        stage("Docker Build & Push"){
+            steps{
+                script{
+                    withDockerRegistry(credentialsId: 'Docker',toolName: 'Docker') {
+                        
+                        sh "docker build -t petclinic1 ."
+                        sh "docker tag petclinic1 sairam2891/pet-clinic123:latest "
+                        sh "docker push sairam2891/pet-clinic123:latest "
+                   }
+                }
+            }
+        }
+        
+        stage("Deploy Using Docker"){
+            steps{
+                sh "docker run -d --name pet -p 8081:8080 sairam2891/pet-clinic123"
+            }
+        }        
+
+
+    }
+}
+ 
